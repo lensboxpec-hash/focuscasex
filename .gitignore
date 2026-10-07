@@ -1,0 +1,39 @@
+# --- secrets / environment ---
+.env
+.env.local
+.env*.local
+
+# --- local database (mock-free but machine-specific; Supabase is the real store) ---
+db/
+*.db
+*.db-journal
+
+# --- next.js ---
+.next/
+out/
+next-env.d.ts
+
+# --- dependencies ---
+node_modules/
+
+# --- logs ---
+dev.log
+server.log
+*.log
+
+# --- workspace-only dirs (not part of the app) ---
+download/
+upload/
+tool-results/
+agent-ctx/
+tests/
+examples/
+skills/
+worklog.md
+
+# --- misc ---
+.DS_Store
+*.pem
+tsconfig.tsbuildinfo
+.zscripts/
+Caddyfile

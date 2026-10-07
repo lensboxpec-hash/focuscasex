@@ -1,0 +1,195 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Eye laterality shared concept: OD = right eye, OS = left eye, OU = both eyes
+model Patient {
+  id           String   @id @default(cuid())
+  mrn          String   @unique
+  name         String
+  age          Int
+  gender       String   @default("MALE") // MALE | FEMALE | OTHER
+  phone        String?
+  address      String?
+  cataractEye  String   @default("NONE") // NONE | OD | OS | OU
+  pterygiumEye  String   @default("NONE") // NONE | OD | OS | OU
+  pterygiumGrade String @default("G1") // G1 | G2 | G3
+  diabetes     Boolean  @default(false)
+  hypertension Boolean  @default(false)
+  allergies    String?
+  referredBy   String   @default("") // referring doctor / source
+  // lens details — biometry & IOL plan (per eye)
+  k1OD         Float? // OD K1 (flat) in D
+  k2OD         Float? // OD K2 (steep) in D
+  k1OS         Float? // OS K1 (flat) in D
+  k2OS         Float? // OS K2 (steep) in D
+  axialLengthOD Float? // OD axial length in mm
+  axialLengthOS Float? // OS axial length in mm
+  aConstant    Float? // IOL A-constant (auto-filled from planned lens, editable)
+  plannedLensId String?
+  plannedLens  LensStock? @relation("patientPlannedLens", fields: [plannedLensId], references: [id], onDelete: SetNull)
+  chosenLensId String?
+  chosenLens   LensStock? @relation("patientChosenLens", fields: [chosenLensId], references: [id], onDelete: SetNull)
+  notes        String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  visionRecords VisionRecord[]
+  sessions      CounselingSession[]
+  appointments  Appointment[]
+}
+
+model VisionRecord {
+  id        String   @id @default(cuid())
+  patientId String
+  patient   Patient  @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  date      DateTime @default(now())
+  // Visual acuity (e.g. 6/6, 20/40, CF, HM)
+  vaOD      String?
+  vaOS      String?
+  // Intraocular pressure mmHg
+  iopOD     Float?
+  iopOS     Float?
+  // Refraction
+  sphOD     Float?
+  cylOD     Float?
+  axisOD    Int?
+  sphOS     Float?
+  cylOS     Float?
+  axisOS    Int?
+  notes     String?
+  createdAt DateTime @default(now())
+}
+
+model Package {
+  id          String   @id @default(cuid())
+  name        String
+  category    String   @default("LENS") // LENS | SURGERY | LASER | TREATMENT | COMBO
+  description String?
+  basePrice   Float    @default(0)
+  discountPct Float    @default(0) // 0-100
+  finalPrice  Float    @default(0)
+  color       String   @default("yellow") // yellow | green | red | cyan | orange
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  items        PackageItem[]
+  sessions     CounselingSession[]
+  appointments Appointment[]
+}
+
+model PackageItem {
+  id        String  @id @default(cuid())
+  packageId String
+  package   Package @relation(fields: [packageId], references: [id], onDelete: Cascade)
+  name      String
+  price     Float   @default(0)
+  optional  Boolean @default(false)
+}
+
+model CounselingSession {
+  id            String    @id @default(cuid())
+  patientId     String
+  patient       Patient   @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  date          DateTime  @default(now())
+  counselor     String
+  procedureType String // CATARACT | GLAUCOMA | LASIK | RETINA | CORNEA | SQUINT | GENERAL
+  eye           String    @default("OU") // OD | OS | OU
+  recommendedPackageId String?
+  recommendedPackage   Package? @relation(fields: [recommendedPackageId], references: [id], onDelete: SetNull)
+  quotedAmount  Float     @default(0)
+  finalAmount   Float     @default(0)
+  paidAmount    Float     @default(0) // amount actually collected
+  paymentMode   String? // CASH | UPI | CARD | INSURANCE | CHEQUE
+  status        String    @default("PENDING") // PENDING | FOLLOW_UP | CONVERTED | COMPLETED | LOST
+  // counseling outcome
+  willingness   String    @default("THINKING") // WILLING | NOT_WILLING | THINKING
+  // surgery planning & workup
+  surgeryDate   DateTime?
+  workupDone    Boolean   @default(false)
+  plannedLensId String?
+  plannedLens   LensStock? @relation("plannedLens", fields: [plannedLensId], references: [id], onDelete: SetNull)
+  placedLensId  String?
+  placedLens    LensStock? @relation("placedLens", fields: [placedLensId], references: [id], onDelete: SetNull)
+  // pre-op readings (for the session's eye)
+  bp            String? // e.g. 120/80 mmHg
+  bs            Float? // blood sugar mg/dL
+  axialLength   Float? // mm
+  k1            Float? // K1 (flat) in D
+  k2            Float? // K2 (steep) in D
+  iolPower      Float? // planned IOL power in D
+  notes         String?
+  followUpDate  DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+model Appointment {
+  id            String   @id @default(cuid())
+  patientId     String
+  patient       Patient  @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  date          DateTime
+  time          String   @default("09:00")
+  duration      Int      @default(30) // minutes
+  procedureType String   @default("CONSULTATION") // CONSULTATION | CATARACT_SURGERY | LASER | FOLLOW_UP | POST_OP | RETINA_EVAL
+  eye           String   @default("NA") // OD | OS | OU | NA
+  packageId     String?
+  package       Package? @relation(fields: [packageId], references: [id], onDelete: SetNull)
+  status        String   @default("SCHEDULED") // SCHEDULED | CONFIRMED | COMPLETED | CANCELLED | NO_SHOW
+  notes         String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+// Clinic staff account for the Focus CaseX login gate
+model User {
+  id           String   @id @default(cuid())
+  name         String
+  email        String   @unique
+  username     String?  @unique // short sign-in alias (e.g. staff / admin)
+  passwordHash String // scrypt: salt:hash hex
+  role         String   @default("DOCTOR") // DOCTOR | COUNSELOR | ADMIN
+  createdAt    DateTime @default(now())
+
+  sessions Session[]
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+}
+
+// IOL lens inventory — stock tracked per model / type / power / batch
+model LensStock {
+  id           String    @id @default(cuid())
+  name         String // e.g. AcrySof IQ
+  type         String    @default("MONOFOCAL") // MONOFOCAL | MULTIFOCAL | TRIFOCAL | TORIC | BIFOCAL | EDOF
+  manufacturer String?
+  model        String?
+  aConstant    Float? // IOL A-constant for SRK/T formulas
+  powerSph     Float // sphere power in D (e.g. +22.0)
+  powerCyl     Float? // toric cylinder power in D
+  batchNo      String
+  expiryDate   DateTime?
+  quantity     Int       @default(0)
+  minStock     Int       @default(2) // low-stock alert threshold
+  notes        String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  plannedFor   CounselingSession[] @relation("plannedLens")
+  placedFor    CounselingSession[] @relation("placedLens")
+
+  patientPlannedFor Patient[] @relation("patientPlannedLens")
+  patientChosenFor  Patient[] @relation("patientChosenLens")
+}
