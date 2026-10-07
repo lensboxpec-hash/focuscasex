@@ -9,6 +9,11 @@
 
 const TOKEN_KEY = 'fcx_token'
 
+// Base path for deployments under a sub-directory (e.g. GitHub Pages project
+// sites). Set at build time via NEXT_PUBLIC_BASE_PATH — empty in normal builds.
+export const APP_BASE = process.env.NEXT_PUBLIC_BASE_PATH ?? ''
+export const appPath = (p: string) => `${APP_BASE}${p}`
+
 export function storeToken(token: string) {
   try {
     sessionStorage.setItem(TOKEN_KEY, token)

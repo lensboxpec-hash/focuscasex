@@ -7,8 +7,9 @@ import {
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import {
-  storeToken, clearStoredToken, fetchSessionUser,
+  storeToken, clearStoredToken, fetchSessionUser, appPath,
 } from '@/lib/client-auth'
+import { DEMO_MODE, installDemoBackend } from '@/lib/demo-backend'
 
 const PORTALS: {
   icon: React.ElementType
@@ -41,17 +42,21 @@ const CHIPS = [
 ]
 
 export function LoginForm() {
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
+  // Demo deployment: prefill throwaway credentials so reviewers can enter
+  // with a single click — the in-browser backend accepts any values.
+  const [email, setEmail] = useState(DEMO_MODE ? 'demo@preethikaeyecare.in' : '')
+  const [password, setPassword] = useState(DEMO_MODE ? 'demo' : '')
   const [show, setShow] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
 
   // Already signed in (cookie or stored token)? Go straight to the app.
   useEffect(() => {
+    // static demo build: /api/* must be answered locally on this page too
+    installDemoBackend()
     let alive = true
     fetchSessionUser().then((u) => {
-      if (alive && u) window.location.replace('/')
+      if (alive && u) window.location.replace(appPath('/'))
     })
     return () => {
       alive = false
@@ -79,7 +84,7 @@ export function LoginForm() {
       // hard-load the app. Cookie path still works in normal browsers.
       if (typeof data.token === 'string') storeToken(data.token)
       else clearStoredToken()
-      window.location.assign('/')
+      window.location.assign(appPath('/'))
     } catch {
       setError('Network error — is the server running?')
       setLoading(false)
@@ -210,7 +215,17 @@ export function LoginForm() {
               Enter your clinic credentials to continue.
             </p>
 
-            
+            {DEMO_MODE && (
+              <div className="mt-4 flex items-start gap-2.5 rounded-lg border border-amber-200 bg-amber-50 px-3.5 py-3" role="note">
+                <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" strokeWidth={2.25} />
+                <div className="text-[12px] leading-relaxed text-amber-900">
+                  <span className="font-semibold">Demo deployment.</span> Runs fully in your browser
+                  with synthetic data — nothing is sent to a server, refresh-safe via localStorage.
+                  Any email &amp; password will sign in; credentials are prefilled.
+                </div>
+              </div>
+            )}
+
             <form onSubmit={submit} className="mt-5 space-y-4" noValidate>
               <div>
                 <label htmlFor="email" className="f-label">Email or short name</label>

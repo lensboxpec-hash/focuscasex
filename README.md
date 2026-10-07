@@ -6,6 +6,18 @@ A sharp, keyboard-fast clinic management app for an eye-care practice: patient r
 
 ![Dashboard](docs/screenshot-dashboard.png)
 
+## Live demo (GitHub Pages)
+
+A fully interactive demo is deployed at **https://lensboxpec-hash.github.io/focuscasex/** — sign in with any email & password (prefilled).
+
+The demo is the *same app code* running as a static export: a browser-side backend (`src/lib/demo-backend.ts`) answers every `/api/*` call from `localStorage`, seeded with realistic **synthetic** data (10 patients, 29-lens IOL catalog, packages, counseling sessions, appointments — dates generated relative to *today* so the dashboard and calendar always look live). No real patient data ever leaves a server; refreshing keeps your changes, and `__FCX_DEMO_RESET__()` in the console restores the seed.
+
+Rebuild & redeploy the static site:
+
+```bash
+node scripts/build-static.mjs /focuscasex   # → out/ (add .nojekyll, push to gh-pages)
+```
+
 ## Features
 
 - **Patient registry** — MRN auto-generation (PEC-0001…), cataract / pterygium eye flags, comorbidities, referral source, full edit support

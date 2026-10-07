@@ -7,7 +7,9 @@ import {
   fetchSessionUser,
   installAuthFetch,
   clearStoredToken,
+  appPath,
 } from '@/lib/client-auth'
+import { DEMO_MODE, installDemoBackend } from '@/lib/demo-backend'
 
 type GateUser = { id: string; name: string; email: string; role: string }
 
@@ -19,6 +21,9 @@ export function SessionGate() {
   const [ready, setReady] = useState(false)
 
   useEffect(() => {
+    // In static demo builds the /api/* calls are answered by the in-browser
+    // backend — it must be installed before any session resolution runs.
+    installDemoBackend()
     installAuthFetch()
     let alive = true
     fetchSessionUser().then((u) => {
@@ -28,7 +33,7 @@ export function SessionGate() {
         setReady(true)
       } else {
         clearStoredToken()
-        window.location.replace('/login')
+        window.location.replace(appPath('/login'))
       }
     })
     return () => {
@@ -44,7 +49,7 @@ export function SessionGate() {
         </div>
         <div className="flex items-center gap-2 text-[13px] font-medium text-zinc-500">
           <Loader2 className="h-3.5 w-3.5 animate-spin" strokeWidth={2.5} />
-          Preparing your workspace…
+          {DEMO_MODE ? 'Preparing demo workspace…' : 'Preparing your workspace…'}
         </div>
       </div>
     )
