@@ -10,7 +10,7 @@ import { PackagesView } from './packages'
 import { CalendarView } from './calendar'
 import { CommandSearch, SearchTarget } from './command-search'
 import { EYE_COLOR, ymd, parseYmd } from './types'
-import { clearStoredToken, appPath } from '@/lib/client-auth'
+import { clearStoredToken } from '@/lib/client-auth'
 import { LayoutDashboard, Users, MessagesSquare, Package, CalendarDays, Eye, Plus, Search, LogOut, Stethoscope, Boxes } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -63,7 +63,7 @@ export function FocusCaseXApp({ user }: { user?: SessionUser }) {
   async function handleLogout() {
     clearStoredToken()
     await fetch('/api/auth/logout', { method: 'POST' }).catch(() => {})
-    window.location.href = appPath('/login')
+    window.location.href = '/login'
   }
 
   const handlePick = (t: SearchTarget) => {

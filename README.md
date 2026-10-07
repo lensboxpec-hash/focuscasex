@@ -6,18 +6,6 @@ A sharp, keyboard-fast clinic management app for an eye-care practice: patient r
 
 ![Dashboard](docs/screenshot-dashboard.png)
 
-## Live demo (GitHub Pages)
-
-A fully interactive demo is deployed at **https://lensboxpec-hash.github.io/focuscasex/** — sign in with any email & password (prefilled).
-
-The demo is the *same app code* running as a static export: a browser-side backend (`src/lib/demo-backend.ts`) answers every `/api/*` call from `localStorage`, seeded with realistic **synthetic** data (10 patients, 29-lens IOL catalog, packages, counseling sessions, appointments — dates generated relative to *today* so the dashboard and calendar always look live). No real patient data ever leaves a server; refreshing keeps your changes, and `__FCX_DEMO_RESET__()` in the console restores the seed.
-
-Rebuild & redeploy the static site:
-
-```bash
-node scripts/build-static.mjs /focuscasex   # → out/ (add .nojekyll, push to gh-pages)
-```
-
 ## Features
 
 - **Patient registry** — MRN auto-generation (PEC-0001…), cataract / pterygium eye flags, comorbidities, referral source, full edit support
@@ -76,7 +64,23 @@ Without env vars, re-running the seed leaves existing accounts untouched; a bran
 
    (`prisma/schema.prisma` already targets PostgreSQL — no file swap needed.)
 
-5. **Deploy** — any Node host works (Vercel, Fly, VPS). Set `DATABASE_URL` as a secret env var; `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` are client-safe.
+5. **Deploy** — any Node host works (Vercel, Fly, Railway, Render, VPS). Set `DATABASE_URL` as a secret env var; `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` are client-safe.
+
+   > **Note** — Focus CaseX is a full-stack Next.js app (API routes + Prisma + cookie sessions), so static hosts like GitHub Pages cannot run it. Use a Node platform and point `DATABASE_URL` at Supabase.
+
+   | Variable                    | Required   | Purpose                                                     |
+   | --------------------------- | ---------- | ----------------------------------------------------------- |
+   | `DATABASE_URL`              | yes        | Supabase session-pooler connection string (PostgreSQL)      |
+   | `NEXT_PUBLIC_SUPABASE_URL`  | no         | Client-safe Supabase project URL                            |
+   | `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | no | Client-safe publishable key (RLS-locked, reads nothing)  |
+   | `ADMIN_PASSWORD` / `STAFF_PASSWORD` | seed only | Login passwords when running `scripts/seed.ts`      |
+
+   Build & run (`output: standalone`):
+
+   ```bash
+   bun run build   # next build → copies static assets into .next/standalone
+   bun run start   # node .next/standalone/server.js  (PORT/HOSTNAME aware)
+   ```
 
 ## Security notes
 
