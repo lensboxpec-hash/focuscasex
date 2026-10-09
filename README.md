@@ -6,6 +6,21 @@ A sharp, keyboard-fast clinic management app for an eye-care practice: patient r
 
 ![Dashboard](docs/screenshot-dashboard.png)
 
+## Live — GitHub Pages (static frontend, Supabase-direct)
+
+**https://lensboxpec-hash.github.io/focuscasex/**
+
+The app runs as a fully static export with **no backend server**: the browser talks
+straight to Supabase — Auth for sign-in, PostgREST for all data. RLS on every table
+(`supabase/policies.sql`) means the publishable key alone can read or write nothing;
+only signed-in clinic accounts can touch data. Every push to `main` redeploys
+automatically (`.github/workflows/deploy-pages.yml`).
+
+- Sign-in: clinic accounts created in Supabase Auth (short aliases `admin` / `staff` work)
+- Data lives in the clinic's real Supabase Postgres — no mock data, anywhere
+- Rebuild locally with `bun run build:static` (env: `NEXT_PUBLIC_SUPABASE_URL`,
+  `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `NEXT_PUBLIC_BASE_PATH`)
+
 ## Features
 
 - **Patient registry** — MRN auto-generation (PEC-0001…), cataract / pterygium eye flags, comorbidities, referral source, full edit support
