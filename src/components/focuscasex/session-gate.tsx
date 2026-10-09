@@ -7,7 +7,9 @@ import {
   fetchSessionUser,
   installAuthFetch,
   clearStoredToken,
+  appPath,
 } from '@/lib/client-auth'
+import { installSupabaseBackend } from '@/lib/sb-install'
 
 type GateUser = { id: string; name: string; email: string; role: string }
 
@@ -19,6 +21,9 @@ export function SessionGate() {
   const [ready, setReady] = useState(false)
 
   useEffect(() => {
+    // Static deployments (GitHub Pages): /api/* is answered by the Supabase
+    // backend shim — it must be installed before any session resolution runs.
+    installSupabaseBackend()
     installAuthFetch()
     let alive = true
     fetchSessionUser().then((u) => {
@@ -28,7 +33,7 @@ export function SessionGate() {
         setReady(true)
       } else {
         clearStoredToken()
-        window.location.replace('/login')
+        window.location.replace(appPath('/login'))
       }
     })
     return () => {

@@ -7,8 +7,9 @@ import {
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import {
-  storeToken, clearStoredToken, fetchSessionUser,
+  storeToken, clearStoredToken, fetchSessionUser, appPath,
 } from '@/lib/client-auth'
+import { installSupabaseBackend } from '@/lib/sb-install'
 
 const PORTALS: {
   icon: React.ElementType
@@ -47,11 +48,14 @@ export function LoginForm() {
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
 
-  // Already signed in (cookie or stored token)? Go straight to the app.
+  // Already signed in? Go straight to the app.
   useEffect(() => {
+    // Static deployments: install the Supabase backend shim first so /api/*
+    // calls on this page are answered in-browser.
+    installSupabaseBackend()
     let alive = true
     fetchSessionUser().then((u) => {
-      if (alive && u) window.location.replace('/')
+      if (alive && u) window.location.replace(appPath('/'))
     })
     return () => {
       alive = false
@@ -79,7 +83,7 @@ export function LoginForm() {
       // hard-load the app. Cookie path still works in normal browsers.
       if (typeof data.token === 'string') storeToken(data.token)
       else clearStoredToken()
-      window.location.assign('/')
+      window.location.assign(appPath('/'))
     } catch {
       setError('Network error — is the server running?')
       setLoading(false)
