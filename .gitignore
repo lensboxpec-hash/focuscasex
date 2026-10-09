@@ -1,6 +1,12 @@
 skills/
 node_modules/
 
+# --- local secrets & agent notes (never publish) ---
+.env
+.env.local
+.env*.local
+worklog.md
+
 # --- build artifacts ---
 .next/
 out/
